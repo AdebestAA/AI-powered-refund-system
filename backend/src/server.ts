@@ -19,7 +19,7 @@ type roomDataType = {
 const app = express();
 // room data
 let activeUsers: activeUsersType = [];
-const roomData: roomDataType[] = [];
+let roomData: roomDataType[] = [];
 // let currentQuestion: questionType | null = null;
 // app.use(
 //   cors({
@@ -327,6 +327,30 @@ io.on("connection", (socket) => {
     }
 
     console.log(socket.id);
+  });
+
+  socket.on("end_game", () => {
+    const roomCode = activeUsers.find((item) => item.socketId === socket.id)
+      ?.roomCode as string;
+
+    if (!roomCode) return;
+    // remove players
+    const removePlayers = activeUsers.filter(
+      (item) => item.roomCode !== roomCode,
+    );
+    activeUsers = removePlayers;
+
+    // remove room data
+
+    const roomDataRemoved = roomData.filter(
+      (item) => item.roomCode !== roomCode,
+    );
+
+    roomData = roomDataRemoved;
+
+    // leave room
+    io.to(roomCode).emit("game_ended", { message: "game has ended" });
+    io.to(roomCode).socketsLeave(roomCode);
   });
   //  closing parenthesis
 });

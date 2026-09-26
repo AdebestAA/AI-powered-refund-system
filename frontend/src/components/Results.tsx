@@ -1,6 +1,9 @@
 import { Home, RotateCcw, Trophy } from "lucide-react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useGameStore } from "../store/gameStore";
+import { useEffect } from "react";
+import { socket } from "../lib/socket";
+import toast from "react-hot-toast";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
@@ -9,6 +12,23 @@ export default function Results() {
   const { code = "" } = useParams();
   const navigate = useNavigate();
   const sorted = [...finalScores].sort((a, b) => b.score - a.score);
+
+  useEffect(() => {
+    const handler = (response: { message: string }) => {
+      // Single cleanup path for a torn-down room: clear zustand AND the
+      // persisted identity, then leave — same as pressing Home yourself.
+      resetGame();
+      if (response.message) {
+        toast(response.message);
+      }
+      navigate("/");
+    };
+    socket.on("game_ended", handler);
+
+    return () => {
+      socket.off("game_ended", handler);
+    };
+  }, [navigate, resetGame]);
 
   // Deep-link guard: can't view results without playing a round first
   if (!code) return <Navigate to="/" replace />;
@@ -68,6 +88,10 @@ export default function Results() {
         )}
         <button
           onClick={() => {
+            // Host tears the room down on the server; non-host just leaves.
+            if (isHost) {
+              socket.emit("end_game");
+            }
             resetGame();
             navigate("/");
           }}

@@ -6,6 +6,7 @@ import type {
   ResultRow,
 } from "../types";
 
+
 type GameState = {
   name: string;
   roomCode: string;
@@ -48,8 +49,17 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ roomCode: code, isHost });
   },
 
-  // Back to home: fresh everything, but keep the typed name for convenience
-  resetGame: () => set({ roomCode: "", isHost: false, ...initialRun }),
+  // Back to home: fresh everything, but keep the typed name for convenience.
+  // Also drops the persisted identity so a later visit can't RECONNECT
+  // into a room that was just torn down.
+  resetGame: () => {
+    try {
+      localStorage.removeItem("my-info");
+    } catch {
+      // storage unavailable (private mode etc.) — store reset still applies
+    }
+    set({ roomCode: "", isHost: false, ...initialRun });
+  },
 
   setPlayers: (players) => set({ players }),
 
