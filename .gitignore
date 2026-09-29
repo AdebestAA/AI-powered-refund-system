@@ -1,0 +1,2 @@
+# holds your GEMINI_API_KEY for docker compose — never commit it
+.env

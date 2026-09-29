@@ -1,49 +1,64 @@
 import { createBrowserRouter } from "react-router-dom";
-import App from "./App";
-import Home from "./components/Home";
-import CreateRoom from "./components/CreateRoom";
-import JoinRoom from "./components/JoinRoom";
-import Lobby from "./components/Lobby";
-import Game from "./components/Game";
-import Results from "./components/Results";
-import NotFoundPage from "./components/NotFoundPage";
+import { AuthLayout } from "@/components/layout/auth-layout";
+import { PublicLayout } from "@/components/layout/public-layout";
+import { AdminLayout } from "@/components/layout/admin-layout";
+import { GuestOnly, RequireAdmin, RequireAuth } from "@/components/shared/route-guards";
+import { LandingPage } from "@/pages/landing-page";
+import { PolicyPage } from "@/pages/policy-page";
+import { NotFoundPage } from "@/pages/not-found-page";
+import { LoginPage } from "@/pages/auth/login-page";
+import { SignupPage } from "@/pages/auth/signup-page";
+import { VerifyEmailPage } from "@/pages/auth/verify-email-page";
+import { SupportPage } from "@/pages/support/support-page";
+import { OverviewPage } from "@/pages/admin/overview-page";
+import { RequestsPage } from "@/pages/admin/requests-page";
+import { RequestDetailPage } from "@/pages/admin/request-detail-page";
+import { CustomersPage } from "@/pages/admin/customers-page";
 
 export const router = createBrowserRouter([
   {
-    path: "/",
-    element: <App />,
     errorElement: <NotFoundPage />,
     children: [
       {
-        index: true,
-        handle: { title: "Home" },
-        element: <Home />,
+        element: <PublicLayout />,
+        children: [
+          { index: true, element: <LandingPage /> },
+          { path: "policy", element: <PolicyPage /> },
+          {
+            element: <RequireAuth />,
+            children: [{ path: "support", element: <SupportPage /> }],
+          },
+        ],
       },
       {
-        path: "create",
-        handle: { title: "Create Room" },
-        element: <CreateRoom />,
+        element: <AuthLayout />,
+        children: [
+          {
+            element: <GuestOnly />,
+            children: [
+              { path: "login", element: <LoginPage /> },
+              { path: "signup", element: <SignupPage /> },
+            ],
+          },
+          { path: "verify-email", element: <VerifyEmailPage /> },
+        ],
       },
       {
-        path: "join",
-        handle: { title: "Join Game" },
-        element: <JoinRoom />,
+        path: "admin",
+        element: <RequireAdmin />,
+        children: [
+          {
+            element: <AdminLayout />,
+            children: [
+              { index: true, element: <OverviewPage /> },
+              { path: "requests", element: <RequestsPage /> },
+              { path: "requests/:id", element: <RequestDetailPage /> },
+              { path: "customers", element: <CustomersPage /> },
+            ],
+          },
+        ],
       },
-      {
-        path: "lobby/:code",
-        handle: { title: "Lobby" },
-        element: <Lobby />,
-      },
-      {
-        path: "game/:code",
-        handle: { title: "Game" },
-        element: <Game />,
-      },
-      {
-        path: "results/:code",
-        handle: { title: "Results" },
-        element: <Results />,
-      },
+      { path: "*", element: <NotFoundPage /> },
     ],
   },
 ]);

@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: resolve
+      POSTGRES_PASSWORD: resolve
+      POSTGRES_DB: resolve
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U resolve -d resolve"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: ./backend
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: 4000
+      DB_URI: postgres://resolve:resolve@db:5432/resolve
+      DB_SSL: "false"
+      FRONTEND_URL: http://localhost:5179
+      # optional: GEMINI_API_KEY=your-key docker compose up (or put it in a .env file next to this one)
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5179:5179"
+    environment:
+      API_PROXY_TARGET: http://backend:4000
+    depends_on:
+      - backend
